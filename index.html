@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<title>条款确认</title>
+<style>
+/* Layout: one reading column; sticky filter bar; each clause is a row with its decision on the right (stacks on phones). */
+:root {
+  --bg: #f3f5f7;
+  --panel: #ffffff;
+  --ink: #17212b;
+  --muted: #5b6875;
+  --line: #d8dee5;
+  --accent: #1f5f8b;
+  --accent-soft: #e2edf5;
+  --ok: #1d7a46;
+  --ok-soft: #e1f2e8;
+  --no: #a55a00;
+  --no-soft: #fbeedb;
+  --warn: #8a2c2c;
+  --font-body: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", system-ui, sans-serif;
+  --font-mono: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171c; --panel: #1a2128; --ink: #e4e9ee; --muted: #9aa7b3; --line: #2c3640;
+    --accent: #7fb6dd; --accent-soft: #1d3142; --ok: #6fcf97; --ok-soft: #173326;
+    --no: #f0b35a; --no-soft: #3a2a14; --warn: #f19a9a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171c; --panel: #1a2128; --ink: #e4e9ee; --muted: #9aa7b3; --line: #2c3640;
+  --accent: #7fb6dd; --accent-soft: #1d3142; --ok: #6fcf97; --ok-soft: #173326;
+  --no: #f0b35a; --no-soft: #3a2a14; --warn: #f19a9a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body);
+  font-size: 15px; line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 64px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 18px; }
+h1 { font-size: 24px; margin: 0; letter-spacing: 0.02em; text-wrap: balance; }
+h2 { font-size: 16px; margin: 0; }
+p { margin: 0; }
+.lead { color: var(--muted); max-width: 70ch; }
+.lead strong { color: var(--ink); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+label.field { display: grid; gap: 4px; font-size: 13px; color: var(--muted); flex: 1 1 180px; min-width: 0; }
+input[type="text"], input[type="search"], select, textarea {
+  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 6px; padding: 7px 10px; width: 100%; min-width: 0;
+}
+textarea { resize: vertical; min-height: 64px; }
+button {
+  font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  border-radius: 6px; padding: 6px 14px; cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.status-line { font-size: 13px; color: var(--muted); }
+.status-line.bad { color: var(--warn); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat { display: grid; gap: 2px; }
+.stat b { font-size: 22px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+.stat.ok b { color: var(--ok); }
+.stat.no b { color: var(--no); }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.bar .ok { background: var(--ok); }
+.bar .no { background: var(--no); }
+.filters { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+.filters .row > * { flex: 1 1 160px; }
+.filters .check { flex: 0 0 auto; display: flex; gap: 6px; align-items: center; font-size: 14px; }
+.count { font-size: 13px; color: var(--muted); }
+.chapter { display: grid; gap: 0; }
+.chapter > h2 { padding: 14px 4px 8px; color: var(--muted); font-weight: 600; }
+.chapter > h2 small { font-weight: 400; margin-left: 8px; }
+.list { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+.clause { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; padding: 14px 16px; border-top: 1px solid var(--line); }
+.clause:first-child { border-top: 0; }
+.clause.s-ok { box-shadow: inset 3px 0 0 var(--ok); }
+.clause.s-no { box-shadow: inset 3px 0 0 var(--no); }
+.meta { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.ref { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); }
+.chip { font-size: 12px; padding: 0 7px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.chip.flag { background: var(--no-soft); color: var(--no); }
+.body { display: grid; gap: 6px; min-width: 0; }
+.text { overflow-wrap: anywhere; }
+.note-sub { font-size: 13px; color: var(--muted); }
+.decide { display: flex; gap: 6px; align-items: flex-start; }
+.decide button[aria-pressed="true"].b-ok { background: var(--ok); border-color: var(--ok); color: var(--panel); }
+.decide button[aria-pressed="true"].b-no { background: var(--no); border-color: var(--no); color: var(--panel); }
+.extra { grid-column: 1 / -1; display: grid; gap: 6px; }
+.others { font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
+.others .o-ok { color: var(--ok); }
+.others .o-no { color: var(--no); }
+.linkish { background: none; border: 0; padding: 0; color: var(--accent); font-size: 13px; text-decoration: underline; }
+.stale { color: var(--warn); font-size: 13px; }
+.empty { padding: 24px; text-align: center; color: var(--muted); }
+#exportBox { width: 100%; min-height: 160px; font-family: var(--font-mono); font-size: 12px; }
+@media (max-width: 620px) {
+  .clause { grid-template-columns: minmax(0, 1fr); }
+  .filters { position: static; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<style>
+[hidden] { display: none !important; }
+body { margin: 0; }
+.gate { max-width: 420px; margin: 12vh auto 0; }
+.gate input { font-size: 16px; }
+.err { color: var(--warn); font-size: 13px; min-height: 1.4em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section id="gate" class="panel gate" aria-labelledby="gateTitle">
+    <h1 id="gateTitle">条款确认</h1>
+    <p class="status-line">请输入访问口令。口令由项目方单独发给您。</p>
+    <form id="gateForm" class="row">
+      <input id="pw" type="password" autocomplete="current-password" aria-label="访问口令" required>
+      <button class="primary" type="submit" id="pwBtn">打开</button>
+    </form>
+    <p id="gateErr" class="err" role="alert"></p>
+  </section>
+
+  <div id="app" hidden style="display:grid; gap:18px">
+    <header style="display:grid; gap:8px">
+      <h1>HG/T 20549 条款确认</h1>
+      <p class="lead">共 <strong id="totalCount">1066</strong> 条，来自 HG/T 20549.2、HG/T 20549.5（1998 版）和被引用的 HG 20546.2-92。每条是对标准原文的<strong>转述</strong>，不是原文；数值、单位和条件按原文保留。</p>
+      <p class="lead">请核对两点：<strong>转述与原文是否一致</strong>，以及<strong>贵方实际设计中是否按此执行</strong>。两点都没问题，点"确认"；否则点"有异议"并写明原因或正确做法。可以只看与自己专业相关的章节，没看的条款保持"待确认"即可。</p>
+      <p class="lead">结果<strong>只保存在您这台电脑的浏览器里</strong>，可以分几次完成（请用同一台电脑、同一个浏览器，不要用无痕模式）。完成后在页面底部导出结果，通过邮件或微信发回。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="whoTitle">
+      <h2 id="whoTitle">审核人</h2>
+      <div class="row">
+        <label class="field">姓名<input id="whoName" type="text" maxlength="40" autocomplete="name"></label>
+        <label class="field">单位与专业<input id="whoRole" type="text" maxlength="60" placeholder="例如：配管专业"></label>
+        <button id="whoSave" class="primary" type="button">保存</button>
+      </div>
+      <p id="saveState" class="status-line"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="progTitle">
+      <h2 id="progTitle">进度</h2>
+      <div class="stats">
+        <div class="stat ok"><b id="myOk">0</b><span>已确认</span></div>
+        <div class="stat no"><b id="myNo">0</b><span>有异议</span></div>
+        <div class="stat"><b id="myTodo">1066</b><span>待确认</span></div>
+      </div>
+      <div class="bar" aria-hidden="true"><i id="barOk" class="ok" style="width:0"></i><i id="barNo" class="no" style="width:0"></i></div>
+    </section>
+
+    <section class="panel filters" aria-label="筛选">
+      <div class="row">
+        <input id="q" type="search" placeholder="搜索条文、出处、类别">
+        <select id="fDoc" aria-label="标准"><option value="">全部标准</option></select>
+        <select id="fCh" aria-label="章"><option value="">全部章</option></select>
+        <select id="fStatus" aria-label="状态">
+          <option value="">全部状态</option>
+          <option value="todo">待确认</option>
+          <option value="ok">已确认</option>
+          <option value="no">有异议</option>
+        </select>
+        <label class="check"><input id="fRel" type="checkbox">只看与排管相关</label>
+      </div>
+      <p id="shown" class="count"></p>
+    </section>
+
+    <main id="list" aria-live="polite"></main>
+
+    <section class="panel" aria-labelledby="expTitle">
+      <h2 id="expTitle">导出结果</h2>
+      <p class="status-line">下载 CSV 文件（可用 Excel 打开）或复制文字，通过邮件或微信发回。</p>
+      <div class="row">
+        <button id="dlMine" class="primary" type="button">下载结果（CSV）</button>
+        <button id="expMine" type="button">复制结果文字</button>
+      </div>
+      <p id="expState" class="status-line"></p>
+      <textarea id="exportBox" hidden readonly aria-label="导出内容"></textarea>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const LS_KEY = "clause-review-v1";
+  const NOTE_MAX = 300;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  let clauses = [], byId = new Map();
+  let mine = {};
+  let me = { name: "", role: "" };
+  let storageOk = true;
+  const openNotes = new Set();
+
+  // ------------------------------------------------------------ 口令解密
+  const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  async function decrypt(password) {
+    const env = await (await fetch("data.enc.json", { cache: "no-store" })).json();
+    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+    const key = await crypto.subtle.deriveKey(
+      { name: "PBKDF2", hash: "SHA-256", salt: unb64(env.salt), iterations: env.iter },
+      base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(env.iv) }, key, unb64(env.ct));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+  $("gateForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pw = $("pw").value.trim();
+    if (!pw) return;
+    $("pwBtn").disabled = true; $("gateErr").textContent = "正在打开…";
+    try {
+      start(await decrypt(pw));
+    } catch (err) {
+      $("gateErr").textContent = (err && err.name === "OperationError") ? "口令不正确，请检查后重试。" : "加载失败，请检查网络后重试。";
+      $("pwBtn").disabled = false;
+    }
+  });
+  if (!window.crypto || !crypto.subtle) {
+    $("gateErr").textContent = "当前浏览器不支持本页所需的解密功能，请改用最新版 Chrome、Edge 或 Safari。";
+    $("pwBtn").disabled = true;
+  }
+
+  // ------------------------------------------------------------ 本机存储
+  function loadLocal() {
+    try {
+      const v = JSON.parse(localStorage.getItem(LS_KEY) || "null");
+      if (v && typeof v === "object") { mine = v.m || {}; me = { name: v.name || "", role: v.role || "" }; }
+    } catch (e) { storageOk = false; }
+  }
+  function saveLocal() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ name: me.name, role: me.role, m: mine })); storageOk = true; }
+    catch (e) { storageOk = false; }
+    setState();
+  }
+  function setState(msg) {
+    const el = $("saveState");
+    el.classList.toggle("bad", !storageOk || !!msg);
+    if (msg) el.textContent = msg;
+    else if (!storageOk) el.textContent = "浏览器不允许本页保存数据（可能是无痕模式）。关闭页面前请先导出结果，否则会丢失。";
+    else el.textContent = me.name ? "已自动保存在本机浏览器。" : "先填写姓名并保存，再开始逐条确认。";
+  }
+
+  // ------------------------------------------------------------ 渲染
+  const decisionOf = (c) => (mine[c.id] ? mine[c.id].s : "");
+  function matches(c) {
+    const q = $("q").value.trim().toLowerCase();
+    if ($("fDoc").value && c.doc !== $("fDoc").value) return false;
+    if ($("fCh").value && c.doc + "|" + c.chn !== $("fCh").value) return false;
+    if ($("fRel").checked && c.rel !== "是") return false;
+    const st = $("fStatus").value, s = decisionOf(c);
+    if (st === "todo" && s) return false;
+    if ((st === "ok" || st === "no") && s !== st) return false;
+    if (q && !(c.text + " " + c.ref + " " + c.cat + " " + c.sub).toLowerCase().includes(q)) return false;
+    return true;
+  }
+  function clauseHtml(c) {
+    const d = mine[c.id];
+    const s = d ? d.s : "";
+    const showNote = s === "no" || (d && d.n) || openNotes.has(c.id);
+    const stale = d && d.h !== c.h;
+    return `<article class="clause ${s ? "s-" + s : ""}" data-id="${c.id}">
+      <div class="body">
+        <div class="meta"><span class="ref">${esc(c.ref)}</span><span>PDF 第 ${esc(c.page)} 页</span>
+          <span class="chip">${esc(c.cat)}</span>${c.rel === "是" ? '<span class="chip">排管相关</span>' : ""}
+          ${/实例图|图示/.test(c.text) ? '<span class="chip flag">例图标注</span>' : ""}
+          ${/跨页/.test(c.text) ? '<span class="chip flag">跨页</span>' : ""}</div>
+        ${c.sub ? `<p class="note-sub">${esc(c.sub)}</p>` : ""}
+        <p class="text">${esc(c.text)}</p>
+        ${c.relNote ? `<p class="note-sub">与排管的关系：${esc(c.relNote)}</p>` : ""}
+      </div>
+      <div class="decide" role="group" aria-label="${esc(c.ref)} 的确认">
+        <button type="button" class="b-ok" data-act="ok" aria-pressed="${s === "ok"}">确认</button>
+        <button type="button" class="b-no" data-act="no" aria-pressed="${s === "no"}">有异议</button>
+      </div>
+      <div class="extra">
+        ${stale ? '<p class="stale">条文在您确认后有修改，请重新核对。</p>' : ""}
+        ${showNote
+          ? `<textarea data-note="${c.id}" id="note-${c.id}" maxlength="${NOTE_MAX}" placeholder="${s === "no" ? "请写明异议：原文是什么、实际怎么做（必填）" : "备注（可选）"}">${esc(d && d.n ? d.n : "")}</textarea>`
+          : `<div><button type="button" class="linkish" data-act="note">加备注</button></div>`}
+        ${s === "no" && !(d && d.n) ? '<p class="stale">请填写异议内容，否则无法据此修改。</p>' : ""}
+      </div>
+    </article>`;
+  }
+  function render() {
+    const shown = clauses.filter(matches);
+    const groups = new Map();
+    for (const c of shown) {
+      const k = c.doc + "|" + c.chn;
+      if (!groups.has(k)) groups.set(k, { doc: c.doc, chn: c.chn, items: [] });
+      groups.get(k).items.push(c);
+    }
+    $("shown").textContent = `显示 ${shown.length} / ${clauses.length} 条`;
+    if (!shown.length) { $("list").innerHTML = '<p class="empty">没有符合条件的条款。换个筛选条件试试。</p>'; return; }
+    let html = "";
+    for (const g of groups.values()) html += `<section class="chapter"><h2>${esc(g.doc)} · ${esc(g.chn)}<small>${g.items.length} 条</small></h2><div class="list">${g.items.map(clauseHtml).join("")}</div></section>`;
+    $("list").innerHTML = html;
+  }
+  function rerenderOne(cid) {
+    const el = document.querySelector(`.clause[data-id="${cid}"]`);
+    if (!el) return;
+    const tmp = document.createElement("div");
+    tmp.innerHTML = clauseHtml(byId.get(cid));
+    el.replaceWith(tmp.firstElementChild);
+  }
+  function renderStats() {
+    let ok = 0, no = 0;
+    for (const c of clauses) { const s = decisionOf(c); if (s === "ok") ok++; else if (s === "no") no++; }
+    const n = clauses.length || 1;
+    $("myOk").textContent = ok; $("myNo").textContent = no; $("myTodo").textContent = clauses.length - ok - no;
+    $("barOk").style.width = (ok / n * 100) + "%"; $("barNo").style.width = (no / n * 100) + "%";
+  }
+  function fillChapters() {
+    const doc = $("fDoc").value, sel = $("fCh"), keep = sel.value, seen = new Map();
+    for (const c of clauses) if (!doc || c.doc === doc) seen.set(c.doc + "|" + c.chn, (doc ? "" : c.doc + " · ") + c.chn);
+    sel.innerHTML = '<option value="">全部章</option>' + [...seen].map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join("");
+    if (seen.has(keep)) sel.value = keep;
+  }
+
+  // ------------------------------------------------------------ 交互
+  function needName() { $("whoName").focus(); setState("请先填写姓名并保存。"); }
+  function decide(cid, s) {
+    if (!me.name) return needName();
+    const c = byId.get(cid), prev = mine[cid];
+    if (prev && prev.s === s) delete mine[cid];
+    else mine[cid] = { s, n: prev ? prev.n || "" : "", at: new Date().toISOString(), h: c.h };
+    saveLocal(); rerenderOne(cid); renderStats();
+    if (s === "no" && mine[cid]) { const t = $("note-" + cid); if (t) t.focus(); }
+  }
+  function noteInput(cid, value) {
+    const v = value.slice(0, NOTE_MAX);
+    if (!mine[cid]) {
+      if (!v.trim()) return;
+      if (!me.name) return needName();
+      mine[cid] = { s: "", n: v, at: new Date().toISOString(), h: byId.get(cid).h };
+    } else mine[cid] = { ...mine[cid], n: v, at: new Date().toISOString() };
+    saveLocal();
+  }
+  $("list").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-act]");
+    if (!b) return;
+    const cid = b.closest(".clause").dataset.id;
+    if (b.dataset.act === "note") { openNotes.add(cid); rerenderOne(cid); const t = $("note-" + cid); if (t) t.focus(); return; }
+    decide(cid, b.dataset.act);
+  });
+  $("list").addEventListener("input", (e) => { const t = e.target.closest("textarea[data-note]"); if (t) noteInput(t.dataset.note, t.value); });
+  $("list").addEventListener("focusout", (e) => { const t = e.target.closest("textarea[data-note]"); if (t) rerenderOne(t.dataset.note); });
+  $("whoSave").addEventListener("click", () => {
+    const name = $("whoName").value.trim(), role = $("whoRole").value.trim();
+    if (!name) return needName();
+    me = { name, role }; saveLocal(); render(); renderStats();
+  });
+  let filterTimer = null;
+  $("q").addEventListener("input", () => { clearTimeout(filterTimer); filterTimer = setTimeout(render, 200); });
+  $("fDoc").addEventListener("change", () => { fillChapters(); render(); });
+  for (const id of ["fCh", "fStatus", "fRel"]) $(id).addEventListener("change", render);
+
+  // ------------------------------------------------------------ 导出
+  const statusText = (s) => (s === "ok" ? "确认" : s === "no" ? "有异议" : "仅备注");
+  const cell = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+  function csv() {
+    const head = ["条款编号", "出处", "转述", "审核人", "单位与专业", "结论", "备注", "时间", "条文已改"];
+    const lines = [head.map(cell).join(",")];
+    for (const c of clauses) {
+      const d = mine[c.id];
+      if (d) lines.push([c.id, c.ref, c.text, me.name, me.role, statusText(d.s), d.n || "", d.at || "", d.h !== c.h ? "是" : ""].map(cell).join(","));
+    }
+    return { text: lines.join("\n"), n: lines.length - 1 };
+  }
+  $("dlMine").addEventListener("click", () => {
+    const { text, n } = csv();
+    if (!n) { $("expState").textContent = "您还没有确认或提出异议的条款。"; return; }
+    const url = URL.createObjectURL(new Blob(["﻿" + text], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `条款确认结果-${(me.name || "未署名").replace(/[\\/:*?"<>|]/g, "")}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    $("expState").textContent = `已下载 ${n} 条结果。`;
+  });
+  $("expMine").addEventListener("click", async () => {
+    const { text, n } = csv();
+    if (!n) { $("expState").textContent = "您还没有确认或提出异议的条款。"; return; }
+    $("exportBox").hidden = true;
+    try { await navigator.clipboard.writeText(text); $("expState").textContent = `已复制 ${n} 条结果，可直接粘贴到邮件或微信。`; }
+    catch (e) {
+      const box = $("exportBox"); box.hidden = false; box.value = text; box.focus(); box.select();
+      $("expState").textContent = "无法直接复制。下方文字已全选，请按 Ctrl+C（Mac 按 ⌘C）复制。";
+    }
+  });
+
+  // ------------------------------------------------------------ 启动
+  function start(data) {
+    clauses = data;
+    byId = new Map(clauses.map((c) => [c.id, c]));
+    $("gate").hidden = true; $("app").hidden = false;
+    $("totalCount").textContent = clauses.length;
+    const docs = [...new Set(clauses.map((c) => c.doc))];
+    $("fDoc").innerHTML = '<option value="">全部标准</option>' + docs.map((d) => `<option value="${esc(d)}">${esc(d)}</option>`).join("");
+    fillChapters();
+    loadLocal();
+    $("whoName").value = me.name; $("whoRole").value = me.role;
+    setState(); render(); renderStats();
+  }
+})();
+</script>
+</body>
+</html>
