@@ -220,7 +220,7 @@ body { margin: 0; }
   }
   $("gateForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const pw = $("pw").value.trim();
+    const pw = $("pw").value.trim().normalize("NFC");  // 与生成脚本一致：口令为 NFC
     if (!pw) return;
     $("pwBtn").disabled = true; $("gateErr").textContent = "正在打开…";
     try {
@@ -240,6 +240,8 @@ body { margin: 0; }
     try {
       const v = JSON.parse(localStorage.getItem(LS_KEY) || "null");
       if (v && typeof v === "object") { mine = v.m || {}; me = { name: v.name || "", role: v.role || "" }; }
+      // 结论值会拼进 class：只认 ok / no / 空，其余一律当作空
+      for (const k of Object.keys(mine)) if (!["ok", "no", ""].includes(mine[k] && mine[k].s)) mine[k] = { ...mine[k], s: "" };
     } catch (e) { storageOk = false; }
   }
   function saveLocal() {
@@ -273,7 +275,7 @@ body { margin: 0; }
     const s = d ? d.s : "";
     const showNote = s === "no" || (d && d.n) || openNotes.has(c.id);
     const stale = d && d.h !== c.h;
-    return `<article class="clause ${s ? "s-" + s : ""}" data-id="${c.id}">
+    return `<article class="clause ${s ? "s-" + s : ""}" data-id="${esc(c.id)}">
       <div class="body">
         <div class="meta"><span class="ref">${esc(c.ref)}</span><span>PDF 第 ${esc(c.page)} 页</span>
           <span class="chip">${esc(c.cat)}</span>${c.rel === "是" ? '<span class="chip">排管相关</span>' : ""}
@@ -290,7 +292,7 @@ body { margin: 0; }
       <div class="extra">
         ${stale ? '<p class="stale">条文在您确认后有修改，请重新核对。</p>' : ""}
         ${showNote
-          ? `<textarea data-note="${c.id}" id="note-${c.id}" maxlength="${NOTE_MAX}" placeholder="${s === "no" ? "请写明异议：原文是什么、实际怎么做（必填）" : "备注（可选）"}">${esc(d && d.n ? d.n : "")}</textarea>`
+          ? `<textarea data-note="${esc(c.id)}" id="note-${esc(c.id)}" maxlength="${NOTE_MAX}" placeholder="${s === "no" ? "请写明异议：原文是什么、实际怎么做（必填）" : "备注（可选）"}">${esc(d && d.n ? d.n : "")}</textarea>`
           : `<div><button type="button" class="linkish" data-act="note">加备注</button></div>`}
         ${s === "no" && !(d && d.n) ? '<p class="stale">请填写异议内容，否则无法据此修改。</p>' : ""}
       </div>
@@ -336,8 +338,11 @@ body { margin: 0; }
   function decide(cid, s) {
     if (!me.name) return needName();
     const c = byId.get(cid), prev = mine[cid];
-    if (prev && prev.s === s) delete mine[cid];
-    else mine[cid] = { s, n: prev ? prev.n || "" : "", at: new Date().toISOString(), h: c.h };
+    // 再点同一结论：取消结论，但保留已写的备注（只有没有备注时才删除整条记录）
+    if (prev && prev.s === s) {
+      if (prev.n) mine[cid] = { ...prev, s: "", at: new Date().toISOString() };
+      else delete mine[cid];
+    } else mine[cid] = { s, n: prev ? prev.n || "" : "", at: new Date().toISOString(), h: c.h };
     saveLocal(); rerenderOne(cid); renderStats();
     if (s === "no" && mine[cid]) { const t = $("note-" + cid); if (t) t.focus(); }
   }
@@ -371,7 +376,13 @@ body { margin: 0; }
 
   // ------------------------------------------------------------ 导出
   const statusText = (s) => (s === "ok" ? "确认" : s === "no" ? "有异议" : "仅备注");
-  const cell = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+  // 以 = + - @ 或制表符、回车开头的单元格在 Excel 中会被当作公式：前面加 ' 使其按文本显示
+  //（回收 CSV 写入 reviews 时须去掉这个 '，SPEC-rules.md R10）
+  const cell = (v) => {
+    let s = String(v ?? "");
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return '"' + s.replace(/"/g, '""') + '"';
+  };
   function csv() {
     const head = ["条款编号", "出处", "转述", "审核人", "单位与专业", "结论", "备注", "时间", "条文已改"];
     const lines = [head.map(cell).join(",")];
